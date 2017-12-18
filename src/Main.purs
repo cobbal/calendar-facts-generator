@@ -8,14 +8,15 @@ import Control.Monad.Eff.JQuery as JQ
 import DOM (DOM)
 
 import Data.Traversable (traverse)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 
 import Data.Array as A
 import Data.String as S
 
 updatePage :: forall e. Eff (dom :: DOM, random :: RANDOM | e) Unit
 updatePage = do
-  phrase <- randomPhrase root
+  usePathSampler <- JQ.hasClass "path" =<< JQ.select "#sampler > :selected"
+  phrase <- if usePathSampler then randomPhrasePathy else randomPhraseBranchy
   JQ.setText phrase =<< JQ.select "#fact"
 
 main :: forall e. Eff (dom :: DOM, random :: RANDOM | e) Unit
@@ -23,14 +24,14 @@ main = JQ.ready $ do
   updatePage
   JQ.on "click" (\_ _ -> updatePage) =<< JQ.select "#genButton"
 
--- type String' = List Char
-
 data Phrase = Str String
             | Seq (Array Phrase)
             | Choice (Array Phrase)
 
--- instance IsString Phrase where
---   fromString = Str
+instance showPhrase :: Show Phrase where
+  show p@(Str s) = show (phraseWeight p) <> ": " <> show s
+  show p@(Seq l) = show (phraseWeight p) <> ": " <> "Seq [" <> S.joinWith "\n, " (show <$> l) <> "\n]"
+  show p@(Choice l) = show (phraseWeight p) <> ": " <> "Choice [" <> S.joinWith "\n, " (show <$> l) <> "\n]"
 
 root :: Phrase
 root = Seq [ Str "Did you know that"
@@ -150,14 +151,41 @@ root = Seq [ Str "Did you know that"
 randomElem :: forall e a. Array a -> Eff (random :: RANDOM | e) (Maybe a)
 randomElem a = A.index a <$> randomInt 0 (A.length a - 1)
 
-randomPhrase :: forall e. Phrase -> Eff (random :: RANDOM | e) String
-randomPhrase (Str s) = pure s
-randomPhrase (Seq l) = S.joinWith " " <$> traverse randomPhrase l
-randomPhrase (Choice l) = do
-  m <- randomElem l
-  case m of
-    Just p -> randomPhrase p
-    Nothing -> pure ""
+randomWeightedElem :: forall e a. Array a -> Array Int -> Eff (random :: RANDOM | e) (Maybe a)
+randomWeightedElem arr ws = lookupByWeight <$> randomInt 0 (totalWeight - 1)
+  where
+    runningWeights :: Array Int
+    runningWeights = gen 0 0
+      where
+        gen :: Int -> Int -> Array Int
+        gen w i =
+          case A.index ws i of
+            Nothing -> []
+            Just w' -> A.cons (w + w') (gen (w + w') (i + 1))
 
--- main :: IO ()
--- main = putStrLn =<< createExtension
+    totalWeight :: Int
+    totalWeight = fromMaybe 0 $ A.last runningWeights
+
+    lookupByWeight :: Int -> Maybe a
+    lookupByWeight r = A.index arr =<< A.findIndex (\w -> r < w) runningWeights
+
+randomPhraseBranchy :: forall e. Eff (random :: RANDOM | e) String
+randomPhraseBranchy = gen root
+  where
+    gen :: Phrase -> Eff (random :: RANDOM | e) String
+    gen (Str s) = pure s
+    gen (Seq l) = S.joinWith " " <$> traverse gen l
+    gen (Choice l) = gen <<< fromMaybe (Str "") =<< randomElem l
+
+phraseWeight :: Phrase -> Int
+phraseWeight (Str _) = 1
+phraseWeight (Seq l) = A.foldl (*) 1 (phraseWeight <$> l)
+phraseWeight (Choice l) = A.foldl (+) 0 (phraseWeight <$> l)
+
+randomPhrasePathy :: forall e. Eff (random :: RANDOM | e) String
+randomPhrasePathy = gen root
+  where
+    gen :: Phrase -> Eff (random :: RANDOM | e) String
+    gen (Str s) = pure s
+    gen (Seq l) = S.joinWith " " <$> traverse gen l
+    gen (Choice l) = gen <<< fromMaybe (Str "") =<< randomWeightedElem l (phraseWeight <$> l)
