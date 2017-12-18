@@ -28,7 +28,7 @@ dist/index.html: index.html
 distribution: dist/min.js dist/index.html
 
 deploy:
-	scp dist/index.html dist/min.js "cirrus:/var/www/secure.cobbal.com/site/todays-language"
+	scp dist/index.html dist/min.js "cirrus:/var/www/secure.cobbal.com/site/calendar-facts"
 
 pulp:
 	$(PULP) run

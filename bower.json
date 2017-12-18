@@ -1,23 +1,23 @@
 {
-    "name": "haskell-language-generator",
-    "ignore": [
-        "**/.*",
-        "node_modules",
-        "bower_components",
-        "output"
-    ],
-    "dependencies": {
-        "purescript-prelude": null,
-        "purescript-console": null,
-        "purescript-unicode": null,
-        "purescript-arrays": null,
-        "purescript-strings": null,
-        "purescript-lists": null,
-        "purescript-random": null,
-        "purescript-dom": null,
-        "purescript-jquery": null
-    },
-    "devDependencies": {
-        "purescript-psci-support": "^3.0.0"
-    }
+  "name": "haskell-language-generator",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": null,
+    "purescript-console": null,
+    "purescript-unicode": null,
+    "purescript-arrays": null,
+    "purescript-strings": null,
+    "purescript-lists": "^4.12.0",
+    "purescript-random": null,
+    "purescript-dom": null,
+    "purescript-jquery": null
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0"
+  }
 }
