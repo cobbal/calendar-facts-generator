@@ -2,15 +2,6 @@ PULP=/Users/acobb/.nvm/versions/node/v4.3.2/bin/pulp
 
 default: distribution
 
-run: gen
-	./gen
-
-gen: gen.hs
-	ghc -O2 -Wall -Wno-unused-top-binds --make gen
-
-clean:
-	rm -f gen.hi gen.o gen
-
 build/project.js: src/Main.purs
 	mkdir -p build
 	$(PULP) browserify --optimise --to build/project.js

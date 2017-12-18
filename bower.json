@@ -1,5 +1,5 @@
 {
-  "name": "haskell-language-generator",
+  "name": "calendar-facts-generator",
   "ignore": [
     "**/.*",
     "node_modules",
