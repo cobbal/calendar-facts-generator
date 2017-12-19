@@ -148,6 +148,14 @@ root = Seq [ Str "Did you know that"
                     ]
            ]
 
+joinWithSpaceExceptForQuestionMark :: Array String -> String
+joinWithSpaceExceptForQuestionMark a = fromMaybe "" $ A.foldl combine Nothing a
+  where
+    combine :: Maybe String -> String -> Maybe String
+    combine Nothing s' = Just s'
+    combine (Just s) "?" = Just $ s <> "?"
+    combine (Just s) s' = Just $ s <> " " <> s'
+
 randomElem :: forall e a. Array a -> Eff (random :: RANDOM | e) (Maybe a)
 randomElem a = A.index a <$> randomInt 0 (A.length a - 1)
 
@@ -174,7 +182,7 @@ randomPhraseBranchy = gen root
   where
     gen :: Phrase -> Eff (random :: RANDOM | e) String
     gen (Str s) = pure s
-    gen (Seq l) = S.joinWith " " <$> traverse gen l
+    gen (Seq l) = joinWithSpaceExceptForQuestionMark <$> traverse gen l
     gen (Choice l) = gen <<< fromMaybe (Str "") =<< randomElem l
 
 phraseWeight :: Phrase -> Int
@@ -187,5 +195,5 @@ randomPhrasePathy = gen root
   where
     gen :: Phrase -> Eff (random :: RANDOM | e) String
     gen (Str s) = pure s
-    gen (Seq l) = S.joinWith " " <$> traverse gen l
+    gen (Seq l) = joinWithSpaceExceptForQuestionMark <$> traverse gen l
     gen (Choice l) = gen <<< fromMaybe (Str "") =<< randomWeightedElem l (phraseWeight <$> l)
